@@ -1,0 +1,995 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>介護パートナーサポート - 心によりそう介護ケアアプリ</title>
+    <!-- PWA用の設定ファイル読み込み -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF7E5F">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3063/3063822.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Accessible Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font (Noto Sans JP / Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#F97316',
+                            lightOrange: '#FFEDD5',
+                            warmBg: '#FFFBEB',
+                            green: '#10B981',
+                            lightGreen: '#D1FAE5',
+                            softDark: '#1F2937',
+                            softGray: '#F3F4F6',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans JP', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FFFDF9;
+            color: #2D3748;
+            touch-action: manipulation;
+        }
+        .tab-btn.active {
+            color: #EA580C;
+            border-bottom: 3px solid #EA580C;
+            background-color: #FFEDD5;
+            font-weight: 700;
+        }
+        .modal-bg {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        /* Custom scrollbar for better visual comfort */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F1F1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #F97316;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-orange-200">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid font-bold fa-heart-pulse text-2xl text-yellow-200 animate-pulse"></i>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wide">介護パートナー</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleQuickEmergencyModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded-full text-xs md:text-sm flex items-center space-x-1 shadow-lg transform active:scale-95 transition">
+                    <i class="fa-solid fa-phone-flip text-white"></i>
+                    <span>緊急SOS</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <nav class="bg-white text-gray-600 border-b border-orange-100 shadow-inner overflow-x-auto">
+            <div class="max-w-4xl mx-auto flex whitespace-nowrap text-sm md:text-base font-medium">
+                <button onclick="switchTab('journal')" id="tab-journal" class="tab-btn active flex-1 py-3 px-3 text-center border-b-2 border-transparent hover:text-orange-600 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-clipboard-list text-lg"></i>
+                    <span>日々の記録</span>
+                </button>
+                <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn flex-1 py-3 px-3 text-center border-b-2 border-transparent hover:text-orange-600 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-calendar-check text-lg"></i>
+                    <span>予定・服薬</span>
+                </button>
+                <button onclick="switchTab('memo')" id="tab-memo" class="tab-btn flex-1 py-3 px-3 text-center border-b-2 border-transparent hover:text-orange-600 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-note-sticky text-lg"></i>
+                    <span>申し送り</span>
+                </button>
+                <button onclick="switchTab('stress')" id="tab-stress" class="tab-btn flex-1 py-3 px-3 text-center border-b-2 border-transparent hover:text-orange-600 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-face-smile text-lg"></i>
+                    <span>ストレスケア</span>
+                </button>
+                <button onclick="switchTab('emergency')" id="tab-emergency" class="tab-btn flex-1 py-3 px-3 text-center border-b-2 border-transparent hover:text-orange-600 transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-address-card text-lg"></i>
+                    <span>緊急情報</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto w-full flex-grow p-4 md:p-6 space-y-6">
+
+        <!-- ==================== TAB 1: DAILY CARE JOURNAL ==================== -->
+        <section id="sec-journal" class="tab-content space-y-6">
+            <!-- Quick Record Quick Buttons -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-circle-plus text-orange-500 mr-2"></i>ワンタップクイック記録
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button onclick="openRecordModal('体調')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 p-3 rounded-xl flex flex-col items-center justify-center transition shadow-sm active:scale-95">
+                        <i class="fa-solid fa-heart-pulse text-2xl text-emerald-600 mb-1"></i>
+                        <span class="font-bold text-sm">体調・バイタル</span>
+                    </button>
+                    <button onclick="openRecordModal('食事')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 p-3 rounded-xl flex flex-col items-center justify-center transition shadow-sm active:scale-95">
+                        <i class="fa-solid fa-utensils text-2xl text-amber-600 mb-1"></i>
+                        <span class="font-bold text-sm">食事・水分</span>
+                    </button>
+                    <button onclick="openRecordModal('服薬')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 p-3 rounded-xl flex flex-col items-center justify-center transition shadow-sm active:scale-95">
+                        <i class="fa-solid fa-pills text-2xl text-blue-600 mb-1"></i>
+                        <span class="font-bold text-sm">服薬</span>
+                    </button>
+                    <button onclick="openRecordModal('排泄')" class="bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 p-3 rounded-xl flex flex-col items-center justify-center transition shadow-sm active:scale-95">
+                        <i class="fa-solid fa-toilet text-2xl text-purple-600 mb-1"></i>
+                        <span class="font-bold text-sm">排泄</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Care Timeline View -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left text-orange-500 mr-2"></i>本日の介護記録タイムライン
+                    </h2>
+                    <span id="journal-date-display" class="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">--/--</span>
+                </div>
+                
+                <!-- Timeline List Container -->
+                <div id="timeline-container" class="space-y-4 relative before:absolute before:inset-0 before:left-4 before:w-0.5 before:bg-gray-200">
+                    <!-- Dynamic timeline items insert here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SCHEDULE & REMINDERS ==================== -->
+        <section id="sec-schedule" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-calendar-days text-orange-500 mr-2"></i>予定＆リマインダー管理
+                    </h2>
+                    <button onclick="openScheduleModal()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>予定を追加</span>
+                    </button>
+                </div>
+
+                <!-- Schedule List -->
+                <div id="schedule-list" class="space-y-3">
+                    <!-- Dynamic Schedule Items -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: HANDOVER MEMO ==================== -->
+        <section id="sec-memo" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-orange-500 mr-2"></i>申し送り・家族間共有メモ
+                </h2>
+                <div class="space-y-3">
+                    <textarea id="new-memo-text" rows="3" class="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-orange-400 text-base" placeholder="例：明日はショートステイのお迎えが9時です。ヘルパーさんへ：お昼の服薬忘れずにお願いします。"></textarea>
+                    <div class="flex justify-end">
+                        <button onclick="addMemo()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-xl text-sm shadow transition flex items-center space-x-1">
+                            <i class="fa-solid fa-share"></i>
+                            <span>メモを投稿・保存</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memo Cards List -->
+            <div id="memo-list" class="space-y-3">
+                <!-- Dynamic Memos -->
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: STRESS CHECK & SELF CARE ==================== -->
+        <section id="sec-stress" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <div class="text-center max-w-xl mx-auto mb-6">
+                    <span class="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">介護者のこころのケア</span>
+                    <h2 class="text-xl font-bold text-gray-800 mt-2">介護者ストレスセルフチェック</h2>
+                    <p class="text-sm text-gray-600 mt-1">ご自身の心と体の状態を少し振り返ってみましょう。直感で選んでみてください。</p>
+                </div>
+
+                <form id="stress-form" onsubmit="calculateStress(event)" class="space-y-6">
+                    <div id="stress-questions" class="space-y-4">
+                        <!-- Questions will be dynamically loaded -->
+                    </div>
+                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition text-base">
+                        <i class="fa-solid fa-chart-pie mr-2"></i>診断結果をみる
+                    </button>
+                </form>
+
+                <!-- Stress Result Modal / Block -->
+                <div id="stress-result" class="hidden mt-6 p-5 rounded-2xl border">
+                    <!-- Dynamic Result -->
+                </div>
+            </div>
+
+            <!-- Self-Care Advice Card -->
+            <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 flex items-start space-x-4">
+                <i class="fa-solid fa-heart-circle-check text-3xl text-emerald-600 mt-1"></i>
+                <div>
+                    <h3 class="font-bold text-emerald-900 text-base">介護者のみなさまへ</h3>
+                    <p class="text-sm text-emerald-800 mt-1 leading-relaxed">
+                        介護は一人で抱え込まず、プロや周囲を頼ることが大切です。「休息をとる」ことは罪悪感を持つことではなく、良いケアを続けるための大切なプロセスです。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: EMERGENCY CARDS & INFO ==================== -->
+        <section id="sec-emergency" class="tab-content hidden space-y-6">
+            <!-- Emergency Quick Contact List -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-red-600 flex items-center">
+                        <i class="fa-solid fa-phone-volume mr-2"></i>緊急連絡先リスト
+                    </h2>
+                    <button onclick="openEmergencyContactModal()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>連絡先登録</span>
+                    </button>
+                </div>
+                
+                <div id="emergency-contacts-list" class="grid sm:grid-cols-2 gap-3">
+                    <!-- Dynamic contacts -->
+                </div>
+            </div>
+
+            <!-- Primary Care Physician Info Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-user-doctor text-blue-600 mr-2"></i>かかりつけ医・医療情報
+                    </h2>
+                    <button onclick="toggleEditDoctorInfo()" class="text-orange-600 hover:text-orange-700 font-bold text-xs">
+                        <i class="fa-solid fa-pen"></i> 編集
+                    </button>
+                </div>
+                <div id="doctor-info-display" class="space-y-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p><span class="font-bold text-gray-500">病院名:</span> <span id="doc-hospital">◯◯クリニック</span></p>
+                    <p><span class="font-bold text-gray-500">主治医:</span> <span id="doc-name">山田 太郎 先生</span></p>
+                    <p><span class="font-bold text-gray-500">診療科:</span> <span id="doc-dept">内科・神経内科</span></p>
+                    <p><span class="font-bold text-gray-500">持病・アレルギー:</span> <span id="doc-notes">高血圧、バファリン服用中</span></p>
+                </div>
+            </div>
+
+            <!-- Emergency Action Guide (緊急時対応マニュアル) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-book-medical text-amber-500 mr-2"></i>緊急時の初期対応マニュアル
+                </h2>
+                <div class="space-y-3">
+                    <details class="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                        <summary class="font-bold text-amber-900 cursor-pointer flex items-center justify-between">
+                            <span><i class="fa-solid fa-person-falling mr-2 text-amber-600"></i>転倒・転落があったとき</span>
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </summary>
+                        <ul class="list-disc list-inside text-xs text-amber-900 mt-2 space-y-1 pl-2">
+                            <li>むやみに動かさず、意識の有無を確認。</li>
+                            <li>頭部打撲や痛みの有無を確認。</li>
+                            <li>自力で立てない、意識が途切れがちな場合は救急車（119）を要請。</li>
+                        </ul>
+                    </details>
+                    
+                    <details class="bg-red-50 rounded-xl p-3 border border-red-200">
+                        <summary class="font-bold text-red-900 cursor-pointer flex items-center justify-between">
+                            <span><i class="fa-solid fa-temperature-arrow-up mr-2 text-red-600"></i>急な発熱・息苦しさ・異変</span>
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </summary>
+                        <ul class="list-disc list-inside text-xs text-red-900 mt-2 space-y-1 pl-2">
+                            <li>体温、血圧、脈拍、SPO2を計測。</li>
+                            <li>水分の補給または気道確保（横向きに寝かせる）。</li>
+                            <li>かかりつけ医へ連絡し指示をあおぐ。</li>
+                        </ul>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- RECORD JOURNAL MODAL -->
+    <div id="modal-record" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative transform transition-all">
+            <button onclick="closeModal('modal-record')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="modal-record-title" class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <!-- Dynamic title -->
+            </h3>
+
+            <form onsubmit="saveJournalRecord(event)" class="space-y-4">
+                <input type="hidden" id="record-category">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">時刻</label>
+                    <input type="time" id="record-time" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" required>
+                </div>
+
+                <div id="dynamic-record-fields">
+                    <!-- Dynamic Inputs depending on type -->
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">メモ・詳細</label>
+                    <textarea id="record-memo" rows="2" class="w-full border border-gray-300 rounded-xl p-2 text-sm" placeholder="気になったこと等があれば入力"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition">
+                    記録を保存
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCHEDULE MODAL -->
+    <div id="modal-schedule" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-schedule')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fa-solid fa-calendar-plus text-orange-500 mr-2"></i>予定・リマインダーの追加
+            </h3>
+
+            <form onsubmit="saveSchedule(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">予定の種類</label>
+                    <select id="sched-type" class="w-full border border-gray-300 rounded-xl p-2.5 text-base">
+                        <option value="デイサービス">デイサービス</option>
+                        <option value="通院・診察">通院・診察</option>
+                        <option value="服薬アラート">服薬アラート</option>
+                        <option value="訪問看護・介護">訪問看護・介護</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">タイトル</label>
+                    <input type="text" id="sched-title" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" placeholder="例: 青空デイサービスのお迎え" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">日付</label>
+                        <input type="date" id="sched-date" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">時間</label>
+                        <input type="time" id="sched-time" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" required>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition">
+                    予定を登録
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DOCTOR INFO MODAL -->
+    <div id="modal-doctor" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-doctor')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fa-solid fa-user-doctor text-blue-600 mr-2"></i>かかりつけ医情報の編集
+            </h3>
+
+            <form onsubmit="saveDoctorInfo(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">病院名・クリニック名</label>
+                    <input type="text" id="edit-doc-hospital" class="w-full border border-gray-300 rounded-xl p-2 text-base" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">主治医氏名</label>
+                    <input type="text" id="edit-doc-name" class="w-full border border-gray-300 rounded-xl p-2 text-base" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">診療科</label>
+                    <input type="text" id="edit-doc-dept" class="w-full border border-gray-300 rounded-xl p-2 text-base">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">持病・服用薬・アレルギーメモ</label>
+                    <textarea id="edit-doc-notes" rows="3" class="w-full border border-gray-300 rounded-xl p-2 text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition">
+                    保存する
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADD CONTACT MODAL -->
+    <div id="modal-contact" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-contact')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fa-solid fa-phone-plus text-red-500 mr-2"></i>緊急連絡先の追加
+            </h3>
+
+            <form onsubmit="saveEmergencyContact(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">名前 / 施設名</label>
+                    <input type="text" id="contact-name" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" placeholder="例: 長男 (太郎) / ケアマネジャー" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">電話番号</label>
+                    <input type="tel" id="contact-phone" class="w-full border border-gray-300 rounded-xl p-2.5 text-base" placeholder="例: 090-0000-0000" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">関係・区分</label>
+                    <select id="contact-role" class="w-full border border-gray-300 rounded-xl p-2.5 text-base">
+                        <option value="家族・親族">家族・親族</option>
+                        <option value="ケアマネジャー">ケアマネジャー</option>
+                        <option value="かかりつけ医">かかりつけ医</option>
+                        <option value="ヘルパー・事業所">ヘルパー・事業所</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition">
+                    連絡先を追加
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t border-gray-200 py-4 text-center text-xs text-gray-500 mt-8">
+        <p>© 介護パートナーサポート App - 介護する人とされる人の毎日をあたたかく支える</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /* STORAGE KEYS */
+        const STORAGE_JOURNAL = 'care_app_journal_v1';
+        const STORAGE_SCHEDULE = 'care_app_schedule_v1';
+        const STORAGE_MEMO = 'care_app_memo_v1';
+        const STORAGE_DOCTOR = 'care_app_doctor_v1';
+        const STORAGE_CONTACTS = 'care_app_contacts_v1';
+
+        /* APP STATE */
+        let state = {
+            journal: [],
+            schedule: [],
+            memos: [],
+            doctor: {
+                hospital: 'みどりクリニック',
+                name: '鈴木 一郎 先生',
+                dept: '内科・循環器科',
+                notes: '高血圧症、骨粗しょう症。朝食後に降圧剤服用中。'
+            },
+            contacts: [
+                { id: 1, name: '救急（消防署）', phone: '119', role: '緊急通報' },
+                { id: 2, name: '長男（連絡先）', phone: '090-1234-5678', role: '家族・親族' },
+                { id: 3, name: '担当ケアマネ (佐藤様)', phone: '03-1234-5678', role: 'ケアマネジャー' }
+            ]
+        };
+
+        /* STRESS QUESTIONS */
+        const STRESS_QUESTIONS = [
+            "夜、ぐっすり眠れない・途中で目が覚めてしまう",
+            "介護のことでイライラしたり、家族に強く当たってしまう",
+            "自分の時間や趣味を楽しむ余裕が全くないと感じる",
+            "肩こり・頭痛・疲労感が慢性的に抜けない",
+            "ふと涙が出たり、悲しい気持ちや強い不安におそわれる"
+        ];
+
+        /* INITIALIZATION */
+        window.onload = function() {
+            loadData();
+            initDateDisplay();
+            renderTimeline();
+            renderSchedule();
+            renderMemos();
+            renderDoctorInfo();
+            renderEmergencyContacts();
+            renderStressQuestions();
+        };
+
+        /* TAB SWITCHING logic */
+        function switchTab(tabKey) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            const targetSec = document.getElementById(`sec-${tabKey}`);
+            const targetBtn = document.getElementById(`tab-${tabKey}`);
+
+            if (targetSec && targetBtn) {
+                targetSec.classList.remove('hidden');
+                targetBtn.classList.add('active');
+            }
+        }
+
+        /* LOCAL STORAGE MANAGERS */
+        function saveData() {
+            localStorage.setItem(STORAGE_JOURNAL, JSON.stringify(state.journal));
+            localStorage.setItem(STORAGE_SCHEDULE, JSON.stringify(state.schedule));
+            localStorage.setItem(STORAGE_MEMO, JSON.stringify(state.memos));
+            localStorage.setItem(STORAGE_DOCTOR, JSON.stringify(state.doctor));
+            localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(state.contacts));
+        }
+
+        function loadData() {
+            const j = localStorage.getItem(STORAGE_JOURNAL);
+            const s = localStorage.getItem(STORAGE_SCHEDULE);
+            const m = localStorage.getItem(STORAGE_MEMO);
+            const d = localStorage.getItem(STORAGE_DOCTOR);
+            const c = localStorage.getItem(STORAGE_CONTACTS);
+
+            if (j) state.journal = JSON.parse(j);
+            if (s) state.schedule = JSON.parse(s);
+            if (m) state.memos = JSON.parse(m);
+            if (d) state.doctor = JSON.parse(d);
+            if (c) state.contacts = JSON.parse(c);
+        }
+
+        function initDateDisplay() {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 (${['日','月','火','水','木','金','土'][now.getDay()]})`;
+            const el = document.getElementById('journal-date-display');
+            if(el) el.innerText = dateStr;
+        }
+
+        /* MODAL UTILS */
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        /* 1. JOURNAL LOGIC */
+        function openRecordModal(category) {
+            document.getElementById('record-category').value = category;
+            document.getElementById('modal-record-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-orange-500 mr-2"></i> ${category} の記録`;
+
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('record-time').value = `${hours}:${minutes}`;
+
+            const fieldsContainer = document.getElementById('dynamic-record-fields');
+            fieldsContainer.innerHTML = '';
+
+            if (category === '体調') {
+                fieldsContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">体温 (°C)</label>
+                            <input type="number" step="0.1" id="rec-temp" class="w-full border rounded-xl p-2 text-base" placeholder="36.5">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">血圧 (上/下)</label>
+                            <input type="text" id="rec-bp" class="w-full border rounded-xl p-2 text-base" placeholder="120/80">
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">ご機嫌・様子</label>
+                        <select id="rec-mood" class="w-full border rounded-xl p-2 text-base">
+                            <option value="良好・穏やか">良好・穏やか 😊</option>
+                            <option value="普通">普通 🙂</option>
+                            <option value="少し不機嫌・不安">少し不機嫌・不安 😟</option>
+                            <option value="体調不良・痛みあり">体調不良・痛みの訴え 😣</option>
+                        </select>
+                    </div>
+                `;
+            } else if (category === '食事') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">区分</label>
+                        <select id="rec-meal-type" class="w-full border rounded-xl p-2 text-base">
+                            <option value="朝食">朝食</option>
+                            <option value="昼食">昼食</option>
+                            <option value="夕食">夕食</option>
+                            <option value="間食・水分">間食・水分補給</option>
+                        </select>
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">食べた量</label>
+                        <select id="rec-meal-amount" class="w-full border rounded-xl p-2 text-base">
+                            <option value="完食 (10割)">完食 (10割)</option>
+                            <option value="8割程度">8割程度</option>
+                            <option value="半分程度 (5割)">半分程度 (5割)</option>
+                            <option value="少しだけ (2~3割)">少しだけ (2~3割)</option>
+                            <option value="全残し (0割)">全残し (0割)</option>
+                        </select>
+                    </div>
+                `;
+            } else if (category === '服薬') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">服薬ステータス</label>
+                        <select id="rec-med-status" class="w-full border rounded-xl p-2 text-base">
+                            <option value="問題なく服用完了">問題なく服用完了 💊</option>
+                            <option value="一部残し・拒否あり">一部残し・拒否あり ⚠️</option>
+                            <option value="塗り薬・貼り薬対応">塗り薬・貼り薬等の処置 🩹</option>
+                        </select>
+                    </div>
+                `;
+            } else if (category === '排泄') {
+                fieldsContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">小便</label>
+                            <select id="rec-urine" class="w-full border rounded-xl p-2 text-base">
+                                <option value="あり (正常)">あり (正常)</option>
+                                <option value="あり (少量・失禁)">あり (少量/失禁)</option>
+                                <option value="なし">なし</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">大便</label>
+                            <select id="rec-stool" class="w-full border rounded-xl p-2 text-base">
+                                <option value="なし">なし</option>
+                                <option value="あり (普通便)">あり (普通便)</option>
+                                <option value="あり (軟便・下痢)">あり (軟便/下痢)</option>
+                                <option value="あり (硬便)">あり (硬便)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-record').classList.remove('hidden');
+        }
+
+        function saveJournalRecord(e) {
+            e.preventDefault();
+            const category = document.getElementById('record-category').value;
+            const time = document.getElementById('record-time').value;
+            const memo = document.getElementById('record-memo').value;
+
+            let details = '';
+
+            if (category === '体調') {
+                const temp = document.getElementById('rec-temp').value;
+                const bp = document.getElementById('rec-bp').value;
+                const mood = document.getElementById('rec-mood').value;
+                details = `体温: ${temp ? temp + '℃' : '未計測'}, 血圧: ${bp || '未計測'}, 様子: ${mood}`;
+            } else if (category === '食事') {
+                const type = document.getElementById('rec-meal-type').value;
+                const amt = document.getElementById('rec-meal-amount').value;
+                details = `${type} - 摂取量: ${amt}`;
+            } else if (category === '服薬') {
+                const status = document.getElementById('rec-med-status').value;
+                details = `状況: ${status}`;
+            } else if (category === '排泄') {
+                const u = document.getElementById('rec-urine').value;
+                const s = document.getElementById('rec-stool').value;
+                details = `尿: ${u} / 便: ${s}`;
+            }
+
+            const item = {
+                id: Date.now(),
+                category,
+                time,
+                details,
+                memo,
+                createdAt: new Date().toISOString()
+            };
+
+            state.journal.unshift(item);
+            saveData();
+            renderTimeline();
+            closeModal('modal-record');
+            document.getElementById('record-memo').value = '';
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            if (!container) return;
+
+            if (state.journal.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                        <p class="text-sm">本日の記録はまだありません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let categoryBadges = {
+                '体調': 'bg-emerald-100 text-emerald-800 border-emerald-300 icon-fa-heart-pulse',
+                '食事': 'bg-amber-100 text-amber-800 border-amber-300 icon-fa-utensils',
+                '服薬': 'bg-blue-100 text-blue-800 border-blue-300 icon-fa-pills',
+                '排泄': 'bg-purple-100 text-purple-800 border-purple-300 icon-fa-toilet'
+            };
+
+            container.innerHTML = state.journal.map(item => `
+                <div class="relative pl-8 group">
+                    <div class="absolute left-2 top-1.5 w-4 h-4 rounded-full bg-orange-500 ring-4 ring-orange-100"></div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${item.time}</span>
+                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${categoryBadges[item.category] || 'bg-gray-100'}">${item.category}</span>
+                        </div>
+                        <p class="font-bold text-gray-800 mt-1 text-sm">${item.details}</p>
+                        ${item.memo ? `<p class="text-xs text-gray-600 mt-1 bg-white p-2 rounded-lg border border-gray-100">メモ: ${item.memo}</p>` : ''}
+                        <button onclick="deleteJournal(${item.id})" class="text-red-400 hover:text-red-600 text-xs mt-2 block ml-auto">削除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteJournal(id) {
+            state.journal = state.journal.filter(i => i.id !== id);
+            saveData();
+            renderTimeline();
+        }
+
+        /* 2. SCHEDULE LOGIC */
+        function openScheduleModal() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('sched-date').value = today;
+            document.getElementById('sched-time').value = "09:00";
+            document.getElementById('modal-schedule').classList.remove('hidden');
+        }
+
+        function saveSchedule(e) {
+            e.preventDefault();
+            const type = document.getElementById('sched-type').value;
+            const title = document.getElementById('sched-title').value;
+            const date = document.getElementById('sched-date').value;
+            const time = document.getElementById('sched-time').value;
+
+            state.schedule.push({ id: Date.now(), type, title, date, time });
+            // Sort by date/time
+            state.schedule.sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+            saveData();
+            renderSchedule();
+            closeModal('modal-schedule');
+            document.getElementById('sched-title').value = '';
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('schedule-list');
+            if (!container) return;
+
+            if (state.schedule.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fa-solid fa-calendar-xmark text-3xl mb-2"></i>
+                        <p class="text-sm">登録されている予定はありません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.schedule.map(item => `
+                <div class="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-xl">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-orange-100 text-orange-600 p-2.5 rounded-xl text-center min-w-[55px]">
+                            <p class="text-xs font-bold">${item.date.split('-').slice(1).join('/')}</p>
+                            <p class="text-sm font-black">${item.time}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold bg-orange-200 text-orange-900 px-2 py-0.5 rounded-md">${item.type}</span>
+                            <h4 class="font-bold text-gray-800 text-sm mt-1">${item.title}</h4>
+                        </div>
+                    </div>
+                    <button onclick="deleteSchedule(${item.id})" class="text-gray-400 hover:text-red-500 p-2">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteSchedule(id) {
+            state.schedule = state.schedule.filter(s => s.id !== id);
+            saveData();
+            renderSchedule();
+        }
+
+        /* 3. MEMO LOGIC */
+        function addMemo() {
+            const txt = document.getElementById('new-memo-text').value.trim();
+            if (!txt) return;
+
+            const now = new Date();
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            state.memos.unshift({
+                id: Date.now(),
+                text: txt,
+                timestamp: timeStr
+            });
+
+            saveData();
+            renderMemos();
+            document.getElementById('new-memo-text').value = '';
+        }
+
+        function renderMemos() {
+            const container = document.getElementById('memo-list');
+            if (!container) return;
+
+            if (state.memos.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-gray-400">
+                        <p class="text-sm">申し送りメモはありません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.memos.map(m => `
+                <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-4 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-amber-800 font-bold"><i class="fa-regular fa-clock mr-1"></i>${m.timestamp}</span>
+                        <button onclick="deleteMemo(${m.id})" class="text-gray-400 hover:text-red-500 text-xs">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${m.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function deleteMemo(id) {
+            state.memos = state.memos.filter(m => m.id !== id);
+            saveData();
+            renderMemos();
+        }
+
+        /* 4. STRESS CHECK LOGIC */
+        function renderStressQuestions() {
+            const container = document.getElementById('stress-questions');
+            if (!container) return;
+
+            container.innerHTML = STRESS_QUESTIONS.map((q, idx) => `
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p class="text-sm font-bold text-gray-800 mb-2">${idx + 1}. ${q}</p>
+                    <div class="flex space-x-4 text-xs font-semibold">
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="radio" name="sq_${idx}" value="2" required class="text-orange-500 focus:ring-orange-400">
+                            <span>よく当てはまる (2点)</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="radio" name="sq_${idx}" value="1" class="text-orange-500 focus:ring-orange-400">
+                            <span>たまにある (1点)</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer">
+                            <input type="radio" name="sq_${idx}" value="0" class="text-orange-500 focus:ring-orange-400">
+                            <span>ほとんどない (0点)</span>
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculateStress(e) {
+            e.preventDefault();
+            let score = 0;
+            STRESS_QUESTIONS.forEach((_, idx) => {
+                const selected = document.querySelector(`input[name="sq_${idx}"]:checked`);
+                if (selected) {
+                    score += parseInt(selected.value);
+                }
+            });
+
+            const resultDiv = document.getElementById('stress-result');
+            resultDiv.classList.remove('hidden');
+
+            let title = '';
+            let message = '';
+            let colorClass = '';
+
+            if (score <= 3) {
+                title = "ストレス度：低 (良好な状態です)";
+                message = "現在、良好なバランスを保てているようです。引き続き、適度な休息を大切にしながらお過ごしください。";
+                colorClass = "bg-green-50 border-green-200 text-green-900";
+            } else if (score <= 6) {
+                title = "ストレス度：中 (ややお疲れ気味です)";
+                message = "少し疲れやストレスが溜まり始めているかもしれません。短時間でも自分の趣味や体を休める時間を作りましょう。";
+                colorClass = "bg-amber-50 border-amber-200 text-amber-900";
+            } else {
+                title = "ストレス度：高 (限界を感じていませんか？)";
+                message = "介護疲れが蓄積している状態です。一人で無理を重ねず、ケアマネジャーやショートステイなどの介護サービスを積極的に頼ることを検討してください。";
+                colorClass = "bg-red-50 border-red-200 text-red-900";
+            }
+
+            resultDiv.className = `mt-6 p-5 rounded-2xl border ${colorClass}`;
+            resultDiv.innerHTML = `
+                <h3 class="font-bold text-lg mb-1">${title}</h3>
+                <p class="text-sm leading-relaxed">${message}</p>
+                <div class="mt-3 text-xs font-bold underline cursor-pointer" onclick="switchTab('emergency')">
+                    → 担当ケアマネジャー・緊急連絡先を確認する
+                </div>
+            `;
+            
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /* 5. DOCTOR & EMERGENCY CONTACT LOGIC */
+        function renderDoctorInfo() {
+            document.getElementById('doc-hospital').innerText = state.doctor.hospital;
+            document.getElementById('doc-name').innerText = state.doctor.name;
+            document.getElementById('doc-dept').innerText = state.doctor.dept;
+            document.getElementById('doc-notes').innerText = state.doctor.notes;
+        }
+
+        function toggleEditDoctorInfo() {
+            document.getElementById('edit-doc-hospital').value = state.doctor.hospital;
+            document.getElementById('edit-doc-name').value = state.doctor.name;
+            document.getElementById('edit-doc-dept').value = state.doctor.dept;
+            document.getElementById('edit-doc-notes').value = state.doctor.notes;
+            document.getElementById('modal-doctor').classList.remove('hidden');
+        }
+
+        function saveDoctorInfo(e) {
+            e.preventDefault();
+            state.doctor = {
+                hospital: document.getElementById('edit-doc-hospital').value,
+                name: document.getElementById('edit-doc-name').value,
+                dept: document.getElementById('edit-doc-dept').value,
+                notes: document.getElementById('edit-doc-notes').value
+            };
+            saveData();
+            renderDoctorInfo();
+            closeModal('modal-doctor');
+        }
+
+        function renderEmergencyContacts() {
+            const container = document.getElementById('emergency-contacts-list');
+            if (!container) return;
+
+            container.innerHTML = state.contacts.map(c => `
+                <div class="bg-red-50/50 border border-red-100 p-3.5 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md">${c.role}</span>
+                        <h4 class="font-bold text-gray-800 text-sm mt-1">${c.name}</h4>
+                        <p class="text-xs font-semibold text-gray-600 mt-0.5">${c.phone}</p>
+                    </div>
+                    <a href="tel:${c.phone}" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center space-x-1 shadow">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>発信</span>
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function openEmergencyContactModal() {
+            document.getElementById('modal-contact').classList.remove('hidden');
+        }
+
+        function saveEmergencyContact(e) {
+            e.preventDefault();
+            const name = document.getElementById('contact-name').value;
+            const phone = document.getElementById('contact-phone').value;
+            const role = document.getElementById('contact-role').value;
+
+            state.contacts.push({ id: Date.now(), name, phone, role });
+            saveData();
+            renderEmergencyContacts();
+            closeModal('modal-contact');
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-phone').value = '';
+        }
+
+        function toggleQuickEmergencyModal() {
+            switchTab('emergency');
+        }
+    </script>
+</body>
+</html>
