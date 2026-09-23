@@ -1005,5 +1005,56 @@ gtag('config', 'G-EFSH5XSCG8');
             switchTab('emergency');
         }
     </script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const contactsList = document.getElementById('emergency-contacts-list');
+      if (!contactsList) return;
+
+      const cards = contactsList.querySelectorAll('div');
+      cards.forEach((card) => {
+        if (card.querySelector('.custom-btn-group')) return;
+
+        const btnGroup = document.createElement('span');
+        btnGroup.className = 'custom-btn-group';
+        btnGroup.style.marginLeft = '8px';
+
+        // 削除ボタン
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = '削除';
+        deleteBtn.style.cssText = 'background-color: #ff4d4f; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: 4px;';
+        deleteBtn.onclick = (e) => {
+          e.preventDefault();
+          if (confirm('この連絡先を削除してもよろしいですか？')) {
+            card.remove();
+          }
+        };
+
+        // 編集ボタン
+        const editBtn = document.createElement('button');
+        editBtn.innerText = '編集';
+        editBtn.style.cssText = 'background-color: #e0e0e0; color: #333; border: none; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: 4px;';
+        editBtn.onclick = (e) => {
+          e.preventDefault();
+          const nameEl = card.querySelector('h3, p, div, span');
+          if (nameEl) {
+            const newName = prompt('新しい名前を入力してください:', nameEl.innerText);
+            if (newName) nameEl.innerText = newName;
+          }
+        };
+
+        btnGroup.appendChild(editBtn);
+        btnGroup.appendChild(deleteBtn);
+
+        const callBtn = card.querySelector('a, button');
+        if (callBtn && callBtn.parentNode) {
+          callBtn.parentNode.appendChild(btnGroup);
+        } else {
+          card.appendChild(btnGroup);
+        }
+      });
+    }, 500);
+  });
+</script>
 </body>
 </html>
